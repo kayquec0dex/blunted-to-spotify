@@ -1,0 +1,140 @@
+# ============================================================
+#  BluntedAI — .gitignore
+#  Protege credenciais, caches e arquivos gerados localmente
+# ============================================================
+
+# ----------------------------------------------------------
+# Credenciais e variáveis de ambiente — NUNCA commitar!
+# ----------------------------------------------------------
+.env
+.env.local
+.env.*.local
+
+# ----------------------------------------------------------
+# Token OAuth do Spotify (gerado pelo spotipy em runtime)
+# ----------------------------------------------------------
+.spotify_cache
+.cache
+.cache-*
+
+# ----------------------------------------------------------
+# Banco de dados local (memória persistente do assistente)
+# ----------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+memory/bluntedai.db
+
+# ----------------------------------------------------------
+# Python
+# ----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribuição / empacotamento
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# ----------------------------------------------------------
+# Pytest / Testes
+# ----------------------------------------------------------
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.cover
+.hypothesis/
+
+# ----------------------------------------------------------
+# IDEs e editores
+# ----------------------------------------------------------
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+
+# Emacs
+\#*\#
+.\#*
+
+# ----------------------------------------------------------
+# Sistemas operacionais
+# ----------------------------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ----------------------------------------------------------
+# Logs
+# ----------------------------------------------------------
+*.log
+logs/
+log/
+
+# ----------------------------------------------------------
+# Arquivos temporários e de runtime
+# ----------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.orig
+.cache/
+tmp/
+temp/
+
+# ----------------------------------------------------------
+# Jupyter Notebooks (caso use para exploração)
+# ----------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb
+
+# ----------------------------------------------------------
+# Ollama (modelos baixados localmente, se aplicável)
+# ----------------------------------------------------------
+models/
+*.gguf
+*.bin

@@ -1,0 +1,58 @@
+# ============================================================
+#  BluntedAI — requirements.txt
+#  Instale todas as dependências com:
+#    pip install -r requirements.txt
+# ============================================================
+
+# ----------------------------------------------------------
+# Spotify
+# ----------------------------------------------------------
+spotipy==2.24.0                  # Wrapper oficial da Spotify Web API
+
+# ----------------------------------------------------------
+# Variáveis de ambiente
+# ----------------------------------------------------------
+python-dotenv==1.0.1             # Carrega o arquivo .env automaticamente
+
+# ----------------------------------------------------------
+# LLM — Google Gemini (Free Tier)
+# ----------------------------------------------------------
+google-generativeai==0.8.3       # SDK oficial do Gemini API
+
+# ----------------------------------------------------------
+# LLM — Groq (Free Tier, alternativa ultra-rápida)
+# ----------------------------------------------------------
+groq==0.11.0                     # SDK oficial da Groq API
+
+# ----------------------------------------------------------
+# LLM — Ollama (local, 100% gratuito)
+# ----------------------------------------------------------
+ollama==0.3.3                    # Cliente Python para Ollama local
+
+# ----------------------------------------------------------
+# Banco de dados (memória persistente)
+# ----------------------------------------------------------
+SQLAlchemy==2.0.36               # ORM robusto para SQLite e futuros bancos
+alembic==1.14.0                  # Migrações de schema para SQLAlchemy
+
+# ----------------------------------------------------------
+# Interface futura (FastAPI / servidor web)
+# ----------------------------------------------------------
+fastapi==0.115.5                 # Framework web async de alta performance
+uvicorn[standard]==0.32.1        # Servidor ASGI para rodar o FastAPI
+httpx==0.27.2                    # Cliente HTTP async (usado internamente pelo FastAPI)
+
+# ----------------------------------------------------------
+# Utilitários gerais
+# ----------------------------------------------------------
+rich==13.9.4                     # Output colorido e formatado no terminal (CLI)
+pydantic==2.10.1                 # Validação de dados e schemas (já incluso no FastAPI)
+pydantic-settings==2.6.1         # Gerenciamento de settings via Pydantic (alternativa ao config.py)
+tenacity==9.0.0                  # Retry automático para chamadas de API com falha
+
+# ----------------------------------------------------------
+# Desenvolvimento e testes
+# ----------------------------------------------------------
+pytest==8.3.3                    # Framework de testes
+pytest-asyncio==0.24.0           # Suporte a testes async com pytest
+ipython==8.29.0                  # Shell interativo para exploração da API
