@@ -12,6 +12,7 @@ from spotify.playlist import SpotifyPlaylist
 from ai.context import ContextBuilder
 from ai.recommender import MusicRecommender
 from ai.llm import get_llm_client
+from ai.analytics import MusicAnalytics
 from memory.database import init_db
 from memory.history import record_interaction
 from memory.profile import (
@@ -40,6 +41,9 @@ INTENT_SYSTEM_PROMPT = """Voce e o {name}, um assistente musical integrado ao Sp
 
 Voce pode executar as seguintes acoes:
 - RECOMMEND: recomendar musicas com base em pedido, humor ou contexto
+- DISCOVERY: explorar novos artistas, generos ou tendencias
+- ANALYZE: fornecer insights detalhados sobre preferencias musicais
+- ACTIVITY_PLAYLIST: criar playlist para atividade especifica (workout, trabalho, relaxar, etc)
 - PLAY: iniciar reproducao (pode incluir busca de uma musica especifica)
 - PAUSE: pausar a reproducao
 - SKIP: pular para a proxima faixa
@@ -69,12 +73,83 @@ REGRAS:
 4. Para RECOMMEND, "query" deve conter o pedido de recomendacao completo.
 5. Para PLAY com musica especifica, "query" deve conter "titulo + artista".
 6. Para VOLUME_SET, "value" deve ser um numero de 0 a 100.
+7. Para DISCOVERY, "query" pode ser: "explore ARTISTA", "genero GENERO", "tendencias".
+8. Para ANALYZE, automaticamente gera relatorio completo do usuario.
+9. Para ACTIVITY_PLAYLIST, "query" deve conter a atividade: "workout", "trabalho", "relaxar", "party", "dirigir", "estudo", etc.
+"""
+
+DISCOVERY_PROMPT = """Voce eh um curador musical especialista em descoberta de novos artistas e tendencias.
+
+Perfil do usuario:
+{user_profile}
+
+O usuario pediu: "{request}"
+
+Baseado nisso, recomende:
+1. Artistas subestimados (menos conhecidos mas de qualidade igual)
+2. Colaboracoes raras ou surpreendentes
+3. Influencias historicas da musica favorita
+4. Versoes alternativas (remixes, acusticos, covers)
+5. Tendencias emergentes no seu estilo
+
+Responda em JSON com:
+{{
+  "exploration_type": "tipo de exploracao",
+  "recommendations": ["artista1", "artista2", ...],
+  "reasoning": "explicacao breve de por que essas descobertas",
+  "response": "mensagem descontraida para o usuario"
+}}
+"""
+
+ACTIVITY_PLAYLIST_PROMPT = """Voce e um especialista em playlists para atividades especificas.
+
+Perfil do usuario: {user_profile}
+
+Crie uma playlist para: {activity}
+
+Caracteristicas esperadas:
+- BPM ideal para a atividade
+- Progressao de energia (inicio, auge, volta ao normal)
+- Generos que motivam para essa atividade
+- Duracao recomendada
+
+Responda em JSON com:
+{{
+  "activity": "a atividade",
+  "bpm_range": "bpm minimo-maximo",
+  "energy_progression": "inicio -> meio -> fim",
+  "recommended_genres": ["genero1", "genero2", ...],
+  "playlist_name": "nome criativo",
+  "response": "mensagem motivacional para o usuario"
+}}
+"""
+
+ANALYSIS_INSIGHTS_PROMPT = """Voce eh um analista musical especialista em padroes de escuta.
+
+Analise profunda do usuario:
+{analytics_data}
+
+Gere insights interessantes sobre:
+1. Padroes de escuta (quando, como, com que frequencia)
+2. Evolucao do gosto musical
+3. Diversidade vs consistencia
+4. Moods e contextos de escuta
+5. Oportunidades de descoberta
+
+Responda em JSON com:
+{{
+  "headline_insight": "descoberta principal mais interessante",
+  "listening_patterns": "analise de quando vc ouve",
+  "taste_evolution": "como seu gosto evoluiu",
+  "diversity_analysis": "quao variado eh seu gosto",
+  "recommendations": ["direcao1", "direcao2", ...],
+  "response": "relatorio completo em tom conversacional"
+}}
 """
 
 class BluntedAI:
     def __init__(self) -> None:
         logger.info(f"[Assistant] Inicializando {settings.assistant.name}...")
-
         init_db()
 
         self._sp = get_spotify_client()
@@ -83,6 +158,7 @@ class BluntedAI:
         self._playlist = SpotifyPlaylist(client=self._sp)
         self._context_builder = ContextBuilder()
         self._recommender = MusicRecommender(spotify_client=self._sp)
+        self._analytics = MusicAnalytics()
         self._llm = get_llm_client()
         self._current_mood: Optional[str] = None
 
@@ -283,6 +359,15 @@ class BluntedAI:
                 mood=mood,
             )
 
+        elif intent == "ANALYZE":
+            return self._handle_analyze_intent(mood=mood)
+
+        elif intent == "DISCOVERY":
+            return self._handle_discovery_intent(query=query, mood=mood)
+
+        elif intent == "ACTIVITY_PLAYLIST":
+            return self._handle_activity_playlist_intent(query=query, mood=mood)
+
         else:
             logger.warning(f"[Assistant] Intenção desconhecida: {intent}")
             return AssistantResponse(
@@ -290,6 +375,196 @@ class BluntedAI:
                 action_taken="unknown",
                 mood=mood,
             )
+
+    def _handle_analyze_intent(self, mood: Optional[str] = None) -> AssistantResponse:
+        """Gera análise detalhada do perfil do usuário"""
+        try:
+            analytics = self._analytics.analyze_listener_profile(days=30)
+            mood_insights = self._analytics.get_mood_insights(days=30)
+            listening_time = self._analytics.get_listening_time_analysis(days=30)
+
+            analytics_text = f"""
+📊 SEU PERFIL MUSICAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎵 ESTATÍSTICAS GERAIS
+  • Total de faixas tocadas: {analytics.total_tracks_played}
+  • Horas ouvidas: {analytics.total_listening_hours}h
+  • Taxa de skip: {analytics.skip_rate}%
+
+🎸 GÊNEROS FAVORITOS
+  {self._format_list(analytics.favorite_genres[:5])}
+
+🎤 ARTISTAS TOP
+  {self._format_list(analytics.favorite_artists[:5])}
+
+⏰ PADRÕES DE ESCUTA
+  • Hora de pico: {analytics.peak_listening_hour}:00h
+  • Por período: {self._format_dict(listening_time.get('by_period', {}))}
+
+🎵 DIVERSIDADE
+  • Artistas: {analytics.artist_diversity_score}/100
+  • Gêneros: {analytics.genre_diversity_score}/100
+
+😊 INSIGHTS EMOCIONAIS
+  {mood_insights.get('insight', 'Sem dados')}
+
+🚀 SUGESTÕES DE EXPLORAÇÃO
+  {self._format_list(analytics.recommendations_for_discovery[:3])}
+"""
+
+            prompt = ANALYSIS_INSIGHTS_PROMPT.format(
+                user_profile=self._context_builder.build_system_prompt(current_mood=mood),
+                analytics_data=analytics_text,
+            )
+
+            insights_json = self._llm.generate_json(
+                prompt=prompt,
+                system_prompt="Você é um analista musical especializado. Responda em JSON válido.",
+                temperature=0.7,
+                max_tokens=1024,
+            )
+
+            detailed_response = insights_json.get(
+                "response",
+                f"Analisei seu perfil! Você ouviu {analytics.total_tracks_played} faixas com {analytics.genre_diversity_score}/100 de diversidade de gêneros."
+            )
+
+            return AssistantResponse(
+                text=detailed_response,
+                action_taken="analyze_profile",
+                mood=mood,
+            )
+
+        except Exception as e:
+            logger.error(f"[Assistant] Erro ao analisar perfil: {e}")
+            return AssistantResponse(
+                text=f"Erro ao gerar análise: {str(e)}",
+                action_taken="analyze_failed",
+                error=True,
+            )
+
+    def _handle_discovery_intent(
+        self,
+        query: Optional[str] = None,
+        mood: Optional[str] = None,
+    ) -> AssistantResponse:
+        """Sugere descobertas musicais baseado no perfil"""
+        try:
+            analytics = self._analytics.analyze_listener_profile(days=30)
+
+            prompt = DISCOVERY_PROMPT.format(
+                user_profile=self._context_builder.build_system_prompt(current_mood=mood),
+                request=query or "novas descobertas baseadas no meu estilo",
+            )
+
+            discovery_json = self._llm.generate_json(
+                prompt=prompt,
+                system_prompt="Você é um curador musical especialista. Responda em JSON válido.",
+                temperature=0.8,
+                max_tokens=1024,
+            )
+
+            recommendations = discovery_json.get("recommendations", [])
+            response_text = discovery_json.get(
+                "response",
+                f"Descobri alguns artistas interessantes para você explorar: {', '.join(recommendations[:5])}"
+            )
+
+            # Buscar recomendações no Spotify
+            tracks = []
+            for artist in recommendations[:3]:
+                results = self._search.tracks(f"artist:{artist}", limit=2)
+                tracks.extend(results)
+
+            return AssistantResponse(
+                text=response_text,
+                action_taken="discovery",
+                tracks=tracks,
+                mood=mood,
+            )
+
+        except Exception as e:
+            logger.error(f"[Assistant] Erro ao gerar descobertas: {e}")
+            return AssistantResponse(
+                text="Erro ao gerar recomendações de descoberta.",
+                action_taken="discovery_failed",
+                error=True,
+            )
+
+    def _handle_activity_playlist_intent(
+        self,
+        query: Optional[str] = None,
+        mood: Optional[str] = None,
+    ) -> AssistantResponse:
+        """Cria uma playlist para uma atividade específica"""
+        try:
+            activity = query or "exercício"
+
+            prompt = ACTIVITY_PLAYLIST_PROMPT.format(
+                user_profile=self._context_builder.build_system_prompt(current_mood=mood),
+                activity=activity,
+            )
+
+            activity_json = self._llm.generate_json(
+                prompt=prompt,
+                system_prompt="Você é um especialista em playlists. Responda em JSON válido.",
+                temperature=0.7,
+                max_tokens=512,
+            )
+
+            playlist_name = activity_json.get("playlist_name", f"BluntedAI - {activity.title()}")
+            response_text = activity_json.get("response", f"Criei uma playlist para {activity}!")
+
+            # Gerar recomendações para a atividade
+            result = self._recommender.recommend(
+                request=f"Músicas para {activity}",
+                n=10,
+                mood=mood,
+                save_to_history=False,
+            )
+
+            if result.tracks:
+                playlist = self._playlist.create(
+                    name=playlist_name,
+                    description=f"Criada pelo BluntedAI para {activity}",
+                    public=False,
+                )
+                if playlist:
+                    self._playlist.add_tracks(playlist.playlist_id, result.uris)
+                    action = f"activity_playlist:{playlist_name}"
+                else:
+                    action = "activity_playlist_failed"
+            else:
+                action = "activity_playlist_no_tracks"
+
+            return AssistantResponse(
+                text=response_text,
+                action_taken=action,
+                tracks=result.tracks,
+                mood=mood,
+            )
+
+        except Exception as e:
+            logger.error(f"[Assistant] Erro ao criar playlist de atividade: {e}")
+            return AssistantResponse(
+                text="Erro ao criar playlist para essa atividade.",
+                action_taken="activity_playlist_failed",
+                error=True,
+            )
+
+    def _format_list(self, items: list[str], max_items: int = 5) -> str:
+        """Formata uma lista para exibição"""
+        if not items:
+            return "Dados insuficientes"
+        return "\n  ".join(f"• {item}" for item in items[:max_items])
+
+    def _format_dict(self, data: dict, max_items: int = 4) -> str:
+        """Formata um dicionário para exibição"""
+        if not data:
+            return "Dados insuficientes"
+        items = list(data.items())[:max_items]
+        return " | ".join(f"{k}: {v}" for k, v in items)
 
     def chat(self, message: str) -> AssistantResponse:
         if not message.strip():

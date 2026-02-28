@@ -36,29 +36,41 @@ class RecommendationResult:
             lines.append(f"\n   Nao encontradas no Spotify: {', '.join(self.not_found)}")
         return "\n".join(lines)
 
-RECOMMENDATION_PROMPT = """Com base no perfil e contexto do usuario abaixo, recomende exatamente {n} musicas.
+RECOMMENDATION_PROMPT = """Voce eh um curador musical de classe mundial especializado em criar recomendacoes hipermencionadas.
 
-Contexto do usuario:
+CONTEXTO DO USUARIO:
 {profile_context}
 
-Pedido atual: "{request}"
+PEDIDO ATUAL: "{request}"
 {mood_line}
 
-REGRAS OBRIGATORIAS:
-1. Responda SOMENTE com um objeto JSON valido, sem texto antes ou depois.
-2. O JSON deve seguir EXATAMENTE este formato:
+Sua tarefa: Recomender EXATAMENTE {n} musicas que:
+1. Façam sentido absoluto para esse usuario, nesse momento
+2. Equilibrem familiar + descoberta (80% seus estilos, 20% novo)
+3. Tenham uma narrativa fluida (inicio -> auge -> resolucao)
+4. Variem os artistas (NO repetir o mesmo artista 2x)
+5. Sejam REAIS e existam NO Spotify
+
+QUALIDADE > QUANTIDADE: Melhor recomendar 3 musicas perfeitas que 10 genéricas.
+
+ANALISE PROFUNDA:
+- Energia: Detecta se o usuario quer energico (80+ BPM) ou suave (60-80 BPM)
+- Familiaridade: Mistura artistas conhecidos com novos descobertos
+- Coesao: As musicas devem "conversar" entre si musicalmente
+- Raciocinio: Explique por que cada musica faz sentido
+
+FORMATO DE RESPOSTA (JSON VALIDO):
 {{
-  "mood": "humor detectado ou inferido do pedido",
-  "reasoning": "explicacao breve de por que essas musicas fazem sentido",
+  "mood": "humor detectado (ex: energia alta, melancvia, criativo)",
+  "reasoning": "porque essas {n} musicas sao perfeitas para esse usuario",
   "recommendations": [
-    {{"title": "Nome da Musica", "artist": "Nome do Artista"}},
-    {{"title": "Nome da Musica", "artist": "Nome do Artista"}}
-  ]
+    {{"title": "Nome Exato da Musica", "artist": "Nome do Artista", "why": "conexao com usuario"}},
+    {{"title": "...", "artist": "...", "why": "..."}}
+  ],
+  "narrative_flow": "como a sequencia progride (calmaria -> climax -> resolucao)"
 }}
-3. Use musicas REAIS que existem no Spotify.
-4. Varie os artistas - evite repetir o mesmo artista mais de uma vez.
-5. Leve em conta o perfil musical e o humor do usuario.
-6. Se o pedido mencionar um genero, humor ou atividade, priorize musicas adequadas.
+
+BONUS: Se conseguir conectar com algo pessoal do usuario (baseado no perfil), ganha pontos!
 """
 
 class MusicRecommender:
