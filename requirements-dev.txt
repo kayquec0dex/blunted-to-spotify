@@ -1,0 +1,32 @@
+# ===========================================================
+#  BluntedAI — requirements-dev.txt
+#  Dependências APENAS para desenvolvimento e testes
+#
+#  Instale com:
+#    pip install -r requirements-dev.txt
+# ===========================================================
+
+# Testes
+pytest==8.3.3
+pytest-cov==5.0.0
+pytest-mock==3.14.0
+pytest-asyncio==0.24.0
+pytest-watch==4.2.0
+
+# Qualidade de código
+pylint==3.2.6
+flake8==7.1.1
+black==24.10.0
+isort==5.13.2
+mypy==1.13.0
+
+# Documentação
+sphinx==8.1.3
+sphinx-rtd-theme==2.0.0
+
+# Utilitários
+ipython==8.29.0
+jupyter==1.0.0
+
+# Integração contínua (opcionais)
+pre-commit==4.0.1
